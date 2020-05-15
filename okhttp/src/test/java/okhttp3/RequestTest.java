@@ -15,14 +15,15 @@
  */
 package okhttp3;
 
+import okio.Buffer;
+import okio.ByteString;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.util.UUID;
-import okio.Buffer;
-import okio.ByteString;
-import org.junit.Test;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -108,6 +109,10 @@ public final class RequestTest {
     Request get = new Request.Builder().url("http://localhost/api").get().build();
     assertThat(get.method()).isEqualTo("GET");
     assertThat(get.body()).isNull();
+
+    Request getWithBody = new Request.Builder().url("http://localhost/api").get(body).build();
+    assertThat(get.method()).isEqualTo("GET");
+    assertThat(getWithBody.body()).isEqualTo(body);
 
     Request head = new Request.Builder().url("http://localhost/api").head().build();
     assertThat(head.method()).isEqualTo("HEAD");

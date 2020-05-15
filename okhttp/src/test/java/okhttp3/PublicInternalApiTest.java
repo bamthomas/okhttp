@@ -25,7 +25,6 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings("ALL") public class PublicInternalApiTest {
   @Test public void permitsRequestBody() {
     assertTrue(HttpMethod.permitsRequestBody("POST"));
-    assertFalse(HttpMethod.permitsRequestBody("GET"));
   }
 
   @Test public void requiresRequestBody() {

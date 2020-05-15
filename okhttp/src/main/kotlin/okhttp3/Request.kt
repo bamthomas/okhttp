@@ -235,6 +235,8 @@ class Request internal constructor(
 
     open fun get() = method("GET", null)
 
+    open fun get(body: RequestBody) = method("GET", body)
+
     open fun head() = method("HEAD", null)
 
     open fun post(body: RequestBody) = method("POST", body)

@@ -15,51 +15,6 @@
  */
 package okhttp3;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.Authenticator;
-import java.net.ConnectException;
-import java.net.CookieManager;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.PasswordAuthentication;
-import java.net.ProtocolException;
-import java.net.Proxy;
-import java.net.ProxySelector;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.URI;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.UnknownHostException;
-import java.security.KeyStore;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.zip.GZIPInputStream;
-import javax.annotation.Nullable;
-import javax.net.ServerSocketFactory;
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLProtocolException;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 import okhttp3.internal.Internal;
 import okhttp3.internal.RecordingAuthenticator;
 import okhttp3.internal.RecordingOkAuthenticator;
@@ -72,19 +27,26 @@ import okhttp3.mockwebserver.SocketPolicy;
 import okhttp3.testing.Flaky;
 import okhttp3.testing.PlatformRule;
 import okhttp3.tls.HandshakeCertificates;
-import okio.Buffer;
-import okio.BufferedSink;
-import okio.BufferedSource;
-import okio.GzipSink;
-import okio.Okio;
-import okio.Utf8;
-import org.junit.After;
-import org.junit.AssumptionViolatedException;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import okio.*;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
+
+import javax.annotation.Nullable;
+import javax.net.ServerSocketFactory;
+import javax.net.SocketFactory;
+import javax.net.ssl.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.Authenticator;
+import java.net.*;
+import java.security.KeyStore;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.zip.GZIPInputStream;
 
 import static java.net.HttpURLConnection.HTTP_MOVED_TEMP;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -96,13 +58,7 @@ import static okhttp3.internal.Internal.addHeaderLenient;
 import static okhttp3.internal.Util.immutableListOf;
 import static okhttp3.internal.http.StatusLine.HTTP_PERM_REDIRECT;
 import static okhttp3.internal.http.StatusLine.HTTP_TEMP_REDIRECT;
-import static okhttp3.mockwebserver.SocketPolicy.DISCONNECT_AFTER_REQUEST;
-import static okhttp3.mockwebserver.SocketPolicy.DISCONNECT_AT_END;
-import static okhttp3.mockwebserver.SocketPolicy.DISCONNECT_AT_START;
-import static okhttp3.mockwebserver.SocketPolicy.FAIL_HANDSHAKE;
-import static okhttp3.mockwebserver.SocketPolicy.SHUTDOWN_INPUT_AT_END;
-import static okhttp3.mockwebserver.SocketPolicy.SHUTDOWN_OUTPUT_AT_END;
-import static okhttp3.mockwebserver.SocketPolicy.UPGRADE_TO_SSL_AT_END;
+import static okhttp3.mockwebserver.SocketPolicy.*;
 import static okhttp3.tls.internal.TlsUtil.localhost;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -1704,7 +1660,7 @@ public final class URLConnectionTest {
   }
 
   @Test public void setValidRequestMethod() {
-    assertMethodForbidsRequestBody("GET");
+    assertMethodPermitsRequestBody("GET");
     assertMethodPermitsRequestBody("DELETE");
     assertMethodForbidsRequestBody("HEAD");
     assertMethodPermitsRequestBody("OPTIONS");
@@ -2906,17 +2862,6 @@ public final class URLConnectionTest {
     assertThat(in.read()).isEqualTo(-1);
     // throws IOException in Gingerbread.
     assertThat(in.read()).isEqualTo(-1);
-  }
-
-  @Test public void getOutputStreamOnGetFails() {
-    try {
-      new Request.Builder()
-          .url(server.url("/"))
-          .method("GET", RequestBody.create("abc", null))
-          .build();
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
   }
 
   @Test public void clientSendsContentLength() throws Exception {

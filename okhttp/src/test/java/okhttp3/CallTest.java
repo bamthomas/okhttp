@@ -15,50 +15,7 @@
  */
 package okhttp3;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InterruptedIOException;
-import java.net.CookieManager;
-import java.net.HttpCookie;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.ProtocolException;
-import java.net.Proxy;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
-import java.net.UnknownServiceException;
-import java.security.cert.Certificate;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import javax.annotation.Nullable;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLProtocolException;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import okhttp3.CallEvent.CallEnd;
-import okhttp3.CallEvent.ConnectStart;
-import okhttp3.CallEvent.ConnectionAcquired;
-import okhttp3.CallEvent.ConnectionReleased;
-import okhttp3.CallEvent.ResponseFailed;
+import okhttp3.CallEvent.*;
 import okhttp3.internal.DoubleInetAddressDns;
 import okhttp3.internal.RecordingOkAuthenticator;
 import okhttp3.internal.Util;
@@ -66,28 +23,27 @@ import okhttp3.internal.Version;
 import okhttp3.internal.http.RecordingProxySelector;
 import okhttp3.internal.io.InMemoryFileSystem;
 import okhttp3.mockwebserver.Dispatcher;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.QueueDispatcher;
-import okhttp3.mockwebserver.RecordedRequest;
-import okhttp3.mockwebserver.SocketPolicy;
+import okhttp3.mockwebserver.*;
 import okhttp3.testing.Flaky;
 import okhttp3.testing.PlatformRule;
 import okhttp3.tls.HandshakeCertificates;
 import okhttp3.tls.HeldCertificate;
-import okio.Buffer;
-import okio.BufferedSink;
-import okio.BufferedSource;
-import okio.ForwardingSource;
-import okio.GzipSink;
-import okio.Okio;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import okio.*;
+import org.junit.*;
 import org.junit.rules.TestRule;
 import org.junit.rules.Timeout;
+
+import javax.annotation.Nullable;
+import javax.net.ssl.*;
+import java.io.*;
+import java.net.*;
+import java.security.cert.Certificate;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.net.CookiePolicy.ACCEPT_ORIGINAL_SERVER;
 import static java.util.Arrays.asList;
@@ -218,13 +174,19 @@ public final class CallTest {
   }
 
   @Test public void getWithRequestBody() throws Exception {
-    server.enqueue(new MockResponse());
+    server.enqueue(new MockResponse().setBody("abc"));
 
-    try {
-      new Request.Builder().method("GET", RequestBody.create("abc", MediaType.get("text/plain")));
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    Request request = new Request.Builder()
+            .url(server.url("/"))
+            .method("GET", RequestBody.create("abc", MediaType.get("text/plain")))
+            .build();
+
+    executeSynchronously(request).assertCode(200);
+
+    RecordedRequest recordedRequest = server.takeRequest();
+    assertThat(recordedRequest.getMethod()).isEqualTo("GET");
+    assertThat(recordedRequest.getBody().readUtf8()).isEqualTo("abc");
+    assertThat(recordedRequest.getHeader("Content-Length")).isEqualTo("3");
   }
 
   @Test public void head() throws Exception {
